@@ -76,6 +76,7 @@ class SignupPageView(FormView):
 
 
 def activate(request, uidb64, token):
+    # import pdb; pdb.set_trace()
     try:
         uid = urlsafe_base64_decode(uidb64).decode()  # bytes to string
         user = get_user_model().objects.get(pk=uid)
@@ -113,6 +114,12 @@ def activate(request, uidb64, token):
             message = 'Activation link is invalid or has expired'
             context = {'message': message}
             return render(request, 'users/user_activation.html', context)
+        else:
+            # return HttpResponse('Activation link is invalid or has expired. ')
+            message = 'Activation link is invalid or has expired'
+            context = {'message': message}
+            return render(request, 'users/user_activation.html', context)
+
     else:
         message = 'User is None'
         return render(request, 'users/user_activation.html', {'message': message})
