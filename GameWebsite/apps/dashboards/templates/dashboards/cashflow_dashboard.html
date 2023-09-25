@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+{% load static %}
+{% load humanize %}
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Cash Flow</title>
+</head>
+
+<body>
+<div class="row">
+  <div class="table-responsive mx-auto custom-table-width">
+    <table class="table table-bordered table-sm ">
+        <h3 class="welcome-text">Cashflow data</h3>
+      <thead>
+        <tr class="bg-primary text-white">
+          <th>Related Account</th>
+          <th>Debit</th>
+          <th>Credit</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+       {% for entry in cashflow_data %}
+        <tr>
+          <td>{{ entry.Related_Account }}</td>
+           <td>{{ entry.Debit|floatformat:1|intcomma }}</td>
+          <td>{{ entry.Credit|floatformat:1|intcomma }}</td>
+          <td>{{ entry.Total|floatformat:1|intcomma }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% if show_back_button %}
+<div class="row mt-3">
+  <div class="col-12 text-center">
+    <a href="{% url 'dashboard' %}" class="btn btn-primary">Go Back to Dashboard</a>
+  </div>
+</div>
+{% endif %}
+
+</body>
+</html>

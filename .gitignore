@@ -1,0 +1,7 @@
+.env
+**/__pycache__/
+*.pyc
+**/*.cpython-39.pyc
+db.sqlite3
+vivek.txt
+venv/

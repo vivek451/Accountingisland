@@ -1,0 +1,34 @@
+{% extends 'dashboards/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<link rel="stylesheet" href="{% static 'dashboards/css/dashboard.css' %}">
+
+<div class="container">
+  <br>
+
+  <div class="row">
+
+    <div class="col-md-6">
+      {% include 'dashboards/add_transaction_dashboard.html' %}
+    </div>
+
+    <div class="col-md-3" id="profit-loss-container">
+      {% include 'dashboards/profit_loss_dashboard.html' %}
+    </div>
+
+    <div class="col-md-3" id="balance-sheet-container">
+      {% include 'dashboards/balance_sheet_dashboard.html' %}
+    </div>
+
+    <div class="col-md-3" id="cashflow-container">
+      {% include 'dashboards/cashflow_dashboard.html' %}
+    </div>
+
+    <div id="add-transaction-container"></div>
+
+</div>
+</div>
+
+{% endblock %}

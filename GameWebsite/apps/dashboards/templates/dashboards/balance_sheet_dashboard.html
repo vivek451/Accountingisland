@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+{% load static %}
+{% load humanize %}
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Balance Sheet</title>
+     <link rel="stylesheet" href="{% static 'dashboards/css/dashboard.css' %}">
+</head>
+<body>
+<div class="container">
+ <div class="row">
+  <div class="table-responsive mx-auto custom-table-width">
+    <table class="table table-bordered table-sm ">
+       <h3 class="welcome-text">Balance Sheet</h3>
+      <thead>
+         <tr class="bg-primary text-white">
+          <th>Category</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Assets - Bank</td>
+              <td>{{ bank_balance|floatformat:1|intcomma }}</td>
+        </tr>
+        <tr>
+           <td>Assets - Debtors</td>
+            <td>{{ debtors_balance|floatformat:1|intcomma }}</td>
+        </tr>
+        <tr>
+          <td><strong>Total Assets</strong></td>
+          <td><strong>{{ total_assets|floatformat:1|intcomma }}</strong></td>
+        </tr>
+         <tr>
+             <td>Liabilities - Loan</td>
+             <td>{{ loan_balance|floatformat:1|intcomma }}</td>
+         </tr>
+      <tr>
+          <td>Liabilities - VAT</td>
+           <td>{{ vat_balance|floatformat:1|intcomma }}</td>
+      </tr>
+        <tr>
+                <td>Equity - Retained Earnings</td>
+                <td>{{ retained_earnings|floatformat:1|intcomma }}</td>
+            </tr>
+            <tr>
+                <td><strong>Total Liabilities and Equity</strong></td>
+               <td><strong>{{ total_liabilities_equity|floatformat:1|intcomma }}</strong></td>
+            </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+    {% if show_back_button %}
+    <div class="row justify-content-center"> <!-- Add this div -->
+    <a href="{% url 'dashboard' %}" class="btn btn-primary btn-sm">Go Back to Dashboard</a>
+    </div> <!-- Add this div -->
+    {% endif %}
+</div>
+</body>
+</html>

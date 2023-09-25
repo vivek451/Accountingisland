@@ -1,0 +1,1 @@
+from GameWebsite.config.settings.common import *
