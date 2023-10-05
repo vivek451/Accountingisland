@@ -131,7 +131,6 @@ def calculate_profit_loss_function(request):
 def get_balance_sheet(request):
     # get balance sheet information
     balance_sheet_data = balance_sheet_view(request.user)
-    print(f"The balance sheet information is {balance_sheet_data}")
     return JsonResponse(balance_sheet_data, safe=False)
 
 
@@ -139,7 +138,6 @@ def get_cash_flow(request):
     # get cash flow information
     cashflow_info = cashflow(request.user)
     cashflow_info = cashflow_info['cashflow_data']
-    print(f"The cashflow info is {cashflow_info}")
     return JsonResponse(cashflow_info, safe=False)
 
 
@@ -303,7 +301,6 @@ def cashflow(user):
         converted_data.append(converted_entry)
 
     # Now 'converted_data' contains the list of dictionaries
-    print(converted_data)
     # Create a defaultdict to group entries by 'Related Account'
     grouped_data = defaultdict(lambda: {'Account': '', 'Debit': 0.0,
                                         'Credit': 0.0, 'Related Account': '', 'Total': ''})
