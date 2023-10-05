@@ -7,14 +7,15 @@ from django.db.models import Sum
 from django.views.generic import ListView, CreateView
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from collections import defaultdict
 
 
 # Create your views here.
 
+
 def reset_transactions(request):
     try:
         # Delete all transactions from the database
-        # import pdb; pdb.set_trace()
         Transaction.objects.all().delete()
         return JsonResponse({'message': 'Transaction reset successfully'})
     except Exception as e:
@@ -94,7 +95,6 @@ class AddTransactionView(LoginRequiredMixin, CreateView):
         return reverse('dashboard')
 
     def get_context_data(self, **kwargs):
-        # import pdb; pdb.set_trace()
         context = super().get_context_data(**kwargs)
         context['showback'] = True
         return context
@@ -108,15 +108,10 @@ class ProfitLossView(LoginRequiredMixin, View):
                    'profit_loss': profit_loss, 'show_back_button': True}
         return render(request, 'dashboards/profit_loss.html', context)
 
-    # @silk_profile(name='Profit Loss')
-    # def dispatch(self, request, *args, **kwargs):
-    #     return super().dispatch(request, *args, **kwargs)
-
 
 #### Add calculate_profit_loss(request):
 
 # views.py
-
 
 def calculate_profit_loss_function(request):
     # Calculate profit loss data here
@@ -136,16 +131,16 @@ def calculate_profit_loss_function(request):
 def get_balance_sheet(request):
     # get balance sheet information
     balance_sheet_data = balance_sheet_view(request.user)
-    # import pdb; pdb.set_trace()
-
+    print(f"The balance sheet information is {balance_sheet_data}")
     return JsonResponse(balance_sheet_data, safe=False)
 
 
 def get_cash_flow(request):
     # get cash flow information
-    # import pdb; pdb.set_trace()
     cashflow_info = cashflow(request.user)
-    return JsonResponse(cashflow_info)
+    cashflow_info = cashflow_info['cashflow_data']
+    print(f"The cashflow info is {cashflow_info}")
+    return JsonResponse(cashflow_info, safe=False)
 
 
 class BalanceSheetView(LoginRequiredMixin, View):
@@ -155,10 +150,6 @@ class BalanceSheetView(LoginRequiredMixin, View):
         context['show_back_button'] = True
         return render(request, 'dashboards/balance_sheet.html', context)
 
-    # @silk_profile(name='Balance Sheet')
-    # def dispatch(self, request, *args, **kwargs):
-    #     return super().dispatch(request, *args, **kwargs)
-
 
 class CashflowView(LoginRequiredMixin, View):
 
@@ -166,10 +157,6 @@ class CashflowView(LoginRequiredMixin, View):
         context = cashflow(request.user)
         context['show_back_button'] = True
         return render(request, 'dashboards\cashflow.html', context)
-
-    # @silk_profile(name='Cash flow')
-    # def dispatch(self, request, *args, **kwargs):
-    #     return super().dispatch(request, *args, **kwargs)
 
 
 def calculate_profit_loss(user):
@@ -201,136 +188,140 @@ def balance_sheet_view(user):
             'journal_entry__transaction').aggregate(
             total_credit=Sum('credit'), total_debit=Sum('debit')
         )
-        if not expenses.get('total_credit'):
-            expenses_credit = expenses['total_credit'] or 0
-            expenses_debit = expenses['total_debit'] or 0
 
-            # select related queryy
-            sales = Journal.objects.filter(journal_entry__transaction__user=user, account='Sales').select_related(
-                'journal_entry__transaction').aggregate(
-                total_credit=Sum('credit'), total_debit=Sum('debit')
-            )
+        expenses_credit = expenses['total_credit'] or 0
+        expenses_debit = expenses['total_debit'] or 0
 
-            sales_credit = sales['total_credit'] or 0
-            sales_debit = sales['total_debit'] or 0
+        expenses_credit = round(expenses_credit, 2)
+        expenses_debit = round(expenses_debit, 2)
 
-            sales = sales_credit - sales_debit
-            expenses = expenses_debit - expenses_credit
-            profit = sales - expenses
+        # select related queryy
+        sales = Journal.objects.filter(journal_entry__transaction__user=user, account='Sales').select_related(
+            'journal_entry__transaction').aggregate(
+            total_credit=Sum('credit'), total_debit=Sum('debit')
+        )
 
-            # get the bank balance
-            # select related queryy
-            bank_balance = Journal.objects.filter(journal_entry__transaction__user=user, account='Bank').select_related(
-                'journal_entry__transaction').aggregate(
-                total_credit=Sum('credit'), total_debit=Sum('debit')
-            )
+        sales_credit = sales['total_credit'] or 0
+        sales_debit = sales['total_debit'] or 0
 
-            bank_balance = (bank_balance['total_debit'] or 0) - (bank_balance['total_credit'] or 0)
-            # bank_balance = (bank_balance['total_credit'] or 0) - (bank_balance['total_debit'] or 0)
+        sales_credit = round(sales_credit, 2)
+        sales_debit = round(sales_debit, 2)
 
-            # get the debtors balance
-            # select related queryy
-            debtors_balance = Journal.objects.filter(journal_entry__transaction__user=user,
-                                                     account='Debtors').select_related(
-                'journal_entry__transaction').aggregate(
-                total_credit=Sum('credit'), total_debit=Sum('debit')
-            )
-            debtors_balance = (debtors_balance['total_debit'] or 0) - (debtors_balance['total_credit'] or 0)
+        sales = sales_credit - sales_debit
+        expenses = expenses_debit - expenses_credit
+        profit = sales - expenses
 
-            # get the creditors balance
-            # select related query
-            creditors_balance = Journal.objects.filter(journal_entry__transaction__user=user,
-                                                       account='Creditors').select_related(
-                'journal_entry__transaction').aggregate(
-                total_credit=Sum('credit'), total_debit=Sum('debit'))
-            creditors_balance = (creditors_balance['total_credit'] or 0) - (creditors_balance['total_debit'] or 0)
+        # get the bank balance
+        # select related queryy
+        bank_balance = Journal.objects.filter(journal_entry__transaction__user=user, account='Bank').select_related(
+            'journal_entry__transaction').aggregate(
+            total_credit=Sum('credit'), total_debit=Sum('debit')
+        )
 
-            # get the vat balance
-            # select related queryy
-            vat_balance = Journal.objects.filter(journal_entry__transaction__user=user,
-                                                 account='VAT').select_related('journal_entry__transaction'). \
-                aggregate(total_credit=Sum('credit'), total_debit=Sum('debit'))
-            vat_balance = (vat_balance['total_credit'] or 0) - (vat_balance['total_debit'] or 0)
+        bank_balance = (bank_balance['total_debit'] or 0) - (bank_balance['total_credit'] or 0)
+        bank_balance = round(bank_balance, 2)
+        # bank_balance = (bank_balance['total_credit'] or 0) - (bank_balance['total_debit'] or 0)
 
-            # get the load balance
-            # select related query
-            loan_balance = Journal.objects.filter(journal_entry__transaction__user=user,
-                                                  account='Loan').select_related('journal_entry__transaction'). \
-                aggregate(total_credit=Sum('credit'), total_debit=Sum('debit'))
-            loan_balance = (loan_balance['total_credit'] or 0) - (loan_balance['total_debit'] or 0)
+        # get the debtors balance
+        # select related queryy
+        debtors_balance = Journal.objects.filter(journal_entry__transaction__user=user,
+                                                 account='Debtors').select_related(
+            'journal_entry__transaction').aggregate(
+            total_credit=Sum('credit'), total_debit=Sum('debit')
+        )
+        debtors_balance = (debtors_balance['total_debit'] or 0) - (debtors_balance['total_credit'] or 0)
 
-            # get the  equity balance
-            # select related query
-            equity_balance = Journal.objects.filter(journal_entry__transaction__user=user,
-                                                    account='Equity').select_related('journal_entry__transaction'). \
-                aggregate(total_credit=Sum('credit'), total_debit=Sum('debit'))
-            equity_balance = (equity_balance['total_credit'] or 0) - (equity_balance['total_debit'] or 0)
+        debtors_balance = round(debtors_balance, 2)
+        # get the creditors balance
+        # select related query
+        creditors_balance = Journal.objects.filter(journal_entry__transaction__user=user,
+                                                   account='Creditors').select_related(
+            'journal_entry__transaction').aggregate(
+            total_credit=Sum('credit'), total_debit=Sum('debit'))
+        creditors_balance = (creditors_balance['total_credit'] or 0) - (creditors_balance['total_debit'] or 0)
+        creditors_balance = round(creditors_balance, 2)
 
-            retained_earnings = sales - expenses
+        # get the vat balance
+        # select related queryy
+        vat_balance = Journal.objects.filter(journal_entry__transaction__user=user,
+                                             account='VAT').select_related('journal_entry__transaction'). \
+            aggregate(total_credit=Sum('credit'), total_debit=Sum('debit'))
+        vat_balance = (vat_balance['total_credit'] or 0) - (vat_balance['total_debit'] or 0)
+        vat_balance = round(vat_balance, 2)
 
-            # Calculate total assets and liabilities
-            total_assets = bank_balance + debtors_balance
-            total_liabilities_equity = creditors_balance + vat_balance + loan_balance + equity_balance + retained_earnings
+        # get the load balance
+        # select related query
+        loan_balance = Journal.objects.filter(journal_entry__transaction__user=user,
+                                              account='Loan').select_related('journal_entry__transaction'). \
+            aggregate(total_credit=Sum('credit'), total_debit=Sum('debit'))
+        loan_balance = (loan_balance['total_credit'] or 0) - (loan_balance['total_debit'] or 0)
+        loan_balance = round(loan_balance, 2)
 
-            context = {
-                'bank_balance': bank_balance,
-                'debtors_balance': debtors_balance,
-                'vat_balance': vat_balance,
-                'creditors_balance': creditors_balance,
-                'loan_balance': loan_balance,
-                'equity_balance': equity_balance,
-                'retained_earnings': retained_earnings,
-                'total_assets': total_assets,
-                'total_liabilities_equity': total_liabilities_equity,
-            }
-        else:
-            context = {
-                'bank_balance': 0,
-                'debtors_balance': 0,
-                'vat_balance': 0,
-                'creditors_balance': 0,
-                'loan_balance': 0,
-                'equity_balance': 0,
-                'retained_earnings': 0,
-                'total_assets': 0,
-                'total_liabilities_equity': 0,
-            }
+        # get the  equity balance
+        # select related query
+        equity_balance = Journal.objects.filter(journal_entry__transaction__user=user,
+                                                account='Equity').select_related('journal_entry__transaction'). \
+            aggregate(total_credit=Sum('credit'), total_debit=Sum('debit'))
+        equity_balance = (equity_balance['total_credit'] or 0) - (equity_balance['total_debit'] or 0)
+        equity_balance = round(equity_balance, 2)
+
+        retained_earnings = sales - expenses
+
+        # Calculate total assets and liabilities
+        total_assets = bank_balance + debtors_balance
+        total_liabilities_equity = creditors_balance + vat_balance + loan_balance + equity_balance + retained_earnings
+
+        context = {
+            'bank_balance': bank_balance,
+            'debtors_balance': debtors_balance,
+            'vat_balance': vat_balance,
+            'creditors_balance': creditors_balance,
+            'loan_balance': loan_balance,
+            'equity_balance': equity_balance,
+            'retained_earnings': retained_earnings,
+            'total_assets': total_assets,
+            'total_liabilities_equity': total_liabilities_equity,
+        }
 
         return context
+
     except Exception as e:
         print(f"The exception caused is {e}")
 
 
 def cashflow(user):
-    # import pdb; pdb.set_trace()
     bank_transactions = Journal.objects.filter(journal_entry__transaction__user=user, account='Bank')
-    data = bank_transactions.values('related_account').annotate(
-        Debit=Sum('debit'), Credit=Sum('credit')).values('related_account', 'debit', 'credit')
-    cashflow_data_dict = {}
 
-    if data.exists():
-        for entry in data:
-            total = entry['debit'] - entry['credit']
-            related_account = entry['related_account']
+    converted_data = []
+    for entry in bank_transactions:
+        converted_entry = {
+            'Account': entry.account,
+            'Debit': entry.debit,
+            'Credit': entry.credit,
+            'Related Account': entry.related_account,
+        }
+        converted_data.append(converted_entry)
 
-        # Check if the related account already exists in the dictionary
-        if related_account in cashflow_data_dict:
-            # Update the existing entry
-            # import pdb; pdb.set_trace()
-            cashflow_data_dict[related_account]['Debit'] += entry['debit']
-            cashflow_data_dict[related_account]['Credit'] += entry['credit']
-            cashflow_data_dict[related_account]['Total'] += total
-        else:
-            # Create a new entry
-            cashflow_data_dict[related_account] = {
-                'Related_Account': related_account,
-                'Debit': entry['debit'],
-                'Credit': entry['credit'],
-                'Total': total
-            }
+    # Now 'converted_data' contains the list of dictionaries
+    print(converted_data)
+    # Create a defaultdict to group entries by 'Related Account'
+    grouped_data = defaultdict(lambda: {'Account': '', 'Debit': 0.0,
+                                        'Credit': 0.0, 'Related Account': '', 'Total': ''})
 
-        cashflow_data_dict = list(cashflow_data_dict.values())
+    # Iterate through the list_data and aggregate the values by 'Related Account'
+    for entry in converted_data:
+        related_account = entry['Related Account']
+        debit = entry['Debit']
+        credit = entry['Credit']
+        total = entry['Debit'] - entry['Credit']
 
-    # Create the context dictionary
+        grouped_data[related_account]['Account'] = entry['Account']
+        grouped_data[related_account]['Debit'] += debit
+        grouped_data[related_account]['Credit'] += credit
+        grouped_data[related_account]['Related Account'] = related_account
+        grouped_data[related_account]['Total'] =grouped_data[related_account]['Debit'] - grouped_data[related_account]['Credit']
+
+    cashflow_data_dict = list(grouped_data.values())
     context = {'cashflow_data': cashflow_data_dict}
+
     return context

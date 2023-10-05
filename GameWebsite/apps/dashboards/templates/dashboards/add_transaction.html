@@ -127,8 +127,18 @@
                     </tr>
 
                     <tr>
+                        <td>Liabilities - Creditors</td>
+                        <td id="creditors-balance">{{ creditors_balance|floatformat:1|intcomma }}</td>
+                    </tr>
+
+                    <tr>
                         <td>Liabilities - VAT</td>
                         <td id="vat-balance">{{ vat_balance|floatformat:1|intcomma }}</td>
+                    </tr>
+
+                     <tr>
+                        <td>Liabilities - Equity</td>
+                        <td id="equity-balance">{{ equity_balance|floatformat:1|intcomma }}</td>
                     </tr>
 
                     <tr>
@@ -180,7 +190,6 @@
       // JavaScript function to handle the "Add Transaction" button click event
       document.getElementById('add-transaction').addEventListener('click', function () {
       // Gather the form data
-      debugger;
       var formData = {
             'csrfmiddlewaretoken': document.getElementsByName('csrfmiddlewaretoken')[0].value,
             'transaction_type': document.getElementById('account').value,
@@ -193,14 +202,12 @@
         //Perform your custom date validation here
         if (formData.date == '') {
             // Display an error message for the date field
-            debugger;
             document.getElementById('error-message-date').style.display = 'block';
             document.getElementById('error-message-date').textContent = 'Please Provide a valid date.';
         }
 
         if (formData.amount == '' || parseFloat(formData.amount) < 0) {
             // Display an error message for the date field
-            debugger;
             document.getElementById('error-message-amount').style.display = 'block';
             document.getElementById('error-message-amount').textContent = 'Please Provide a valid amount.';
         }
@@ -226,7 +233,6 @@
             success: function (data, textStatus, xhr) {
                 // Handle success: Display a success message and clear the form
                 if (xhr.status == 200) {
-                    debugger;
                     document.getElementById('success-message').style.display = 'block';
                     document.getElementById('success-message').textContent = data.message;
                     document.getElementById('transaction-form').reset(); // Clear the form
@@ -238,7 +244,6 @@
 
                 } else if (xhr.status == 400) {
                     // Form Validation error
-                    debugger;
                 }
                 // After the transaction is added, fetch updated profit loss data
                 fetch('{% url 'calculate_profit_loss' %}', {
@@ -250,7 +255,6 @@
                 .then(response => response.json())
                 .then(data => {
                     // Update the profit and loss table rows with the received data
-                    debugger;
                     const salesAmount = document.getElementById('sales-amount');
                     const expensesAmount = document.getElementById('expenses-amount');
                     const profitLossAmount = document.getElementById('profit-loss-amount');
@@ -273,11 +277,14 @@
                 .then(response => response.json())
                 .then(data => {
                     // Update the Balance Sheet table rows with the received data
+                    debugger;
                     const bankBalance = document.getElementById('bank-balance');
                     const debtorsBalance = document.getElementById('debtors-balance');
                     const totalAssets = document.getElementById('total-assets');
                     const loanBalance = document.getElementById('loan-balance');
+                    const creditorsBalance = document.getElementById('creditors-balance');
                     const vatBalance = document.getElementById('vat-balance');
+                    const equityBalance = document.getElementById('equity-balance');
                     const retainedEarnings = document.getElementById('retained-earnings');
                     const totalLiabilitiesEquity = document.getElementById('total-liabilities-equity');
 
@@ -285,14 +292,14 @@
                     debtorsBalance.textContent = data.debtors_balance.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
                     totalAssets.textContent = data.total_assets.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
                     loanBalance.textContent = data.loan_balance.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+                    creditorsBalance.textContent = data.creditors_balance.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
                     vatBalance.textContent = data.vat_balance.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+                    equityBalance.textContent = data.equity_balance.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
                     retainedEarnings.textContent = data.retained_earnings.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
                     totalLiabilitiesEquity.textContent = data.total_liabilities_equity.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
                 })
                 .catch(error => {
-                    console.error('Error:', error);
                 });
-
                 // Fetch the Cashflow data after the transaction is added
                 fetch('{% url 'get_cashflow_data' %}', {
                     method: 'GET',
@@ -303,29 +310,31 @@
                 .then(response => response.json())
                 .then(data => {
                     // Update the Cashflow table rows with the received data
-                    debugger;
                     const cashflowTableBody = document.querySelector('#cashflow-table tbody');
-                    cashflowTableBody.innerHTML = ''; // Clear existing rows
+                    cashflowTableBody.innerHTML = '';
 
-                    data.cashflow_data.forEach(entry => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${entry.Related_Account}</td>
-                            <td>${entry.Debit.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
-                            <td>${entry.Credit.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
-                            <td>${entry.Total.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
+                    for(let i = 0; i < data.length; i++) {
+                     const row = document.createElement('tr');
+                     const entry = data[i]
+                     const relatedAccount = entry['Related Account'];
+                     const debit = entry.Debit.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1});
+                     const credit = entry.Credit.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1});
+                     const total = entry.Total.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1});
+
+                     row.innerHTML = `
+                            <td>${relatedAccount}</td>
+                            <td>${debit}</td>
+                            <td>${credit}</td>
+                            <td>${total}</td>
                         `;
                         cashflowTableBody.appendChild(row);
-                    });
+                    }
                 })
                 .catch(error => {
-                    debugger;
-                    console.error('Error:', error);
                 });
             },
             error: function (xhr, errmsg, err) {
                 // Handle error: Display an error message
-                debugger;
                 console.log(xhr.status + ': ' + xhr.responseText); // Log the error in the console
             }
         });
@@ -341,7 +350,6 @@
         'csrfmiddlewaretoken': document.getElementsByName('csrfmiddlewaretoken')[0].value,
     },
     success: function (data) {
-        debugger;
 
         // Handle success: Display a success message
 
@@ -369,7 +377,6 @@ function fetchAndUpdateData() {
     .then(response => response.json())
     .then(data => {
         // Update the profit and loss table rows with the received data
-        debugger;
         const salesAmount = document.getElementById('sales-amount');
         const expensesAmount = document.getElementById('expenses-amount');
         const profitLossAmount = document.getElementById('profit-loss-amount');
@@ -392,12 +399,13 @@ function fetchAndUpdateData() {
     .then(response => response.json())
     .then(data => {
         // Update the Balance Sheet table rows with the received data
-        debugger;
         const bankBalance = document.getElementById('bank-balance');
         const debtorsBalance = document.getElementById('debtors-balance');
         const totalAssets = document.getElementById('total-assets');
         const loanBalance = document.getElementById('loan-balance');
+        const creditorsBalance = document.getElementById('creditors-balance');
         const vatBalance = document.getElementById('vat-balance');
+        const equityBalance = document.getElementById('equity-balance');
         const retainedEarnings = document.getElementById('retained-earnings');
         const totalLiabilitiesEquity = document.getElementById('total-liabilities-equity');
 
@@ -405,7 +413,9 @@ function fetchAndUpdateData() {
         debtorsBalance.textContent = data.debtors_balance.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
         totalAssets.textContent = data.total_assets.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
         loanBalance.textContent = data.loan_balance.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+        creditorsBalance.textContent = data.creditors_balance.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
         vatBalance.textContent = data.vat_balance.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+        equityBalance.textContent = data.equity_balance.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
         retainedEarnings.textContent = data.retained_earnings.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
         totalLiabilitiesEquity.textContent = data.total_liabilities_equity.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     })
@@ -424,20 +434,24 @@ function fetchAndUpdateData() {
     .then(data => {
         // Update the Cashflow table rows with the received data
         const cashflowTableBody = document.querySelector('#cashflow-table tbody');
-        cashflowTableBody.innerHTML = ''; // Clear existing rows
+        cashflowTableBody.innerHTML = '';
+        for(let i = 0; i < data.length; i++) {
+             const row = document.createElement('tr');
+             const entry = data[i]
+             const relatedAccount = entry['Related Account'];
+             const debit = entry.Debit.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1});
+             const credit = entry.Credit.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1});
+             const total = entry.Total.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1});
 
-        data.cashflow_data.forEach(entry => {
-            debugger;
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${entry.Related_Account}</td>
-                <td>${entry.Debit.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
-                <td>${entry.Credit.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
-                <td>${entry.Total.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
-            `;
-            cashflowTableBody.appendChild(row);
-        });
-    })
+             row.innerHTML = `
+                    <td>${relatedAccount}</td>
+                    <td>${debit}</td>
+                    <td>${credit}</td>
+                    <td>${total}</td>
+                `;
+                cashflowTableBody.appendChild(row);
+            }
+        })
     .catch(error => {
         console.error('Error:', error);
     });
