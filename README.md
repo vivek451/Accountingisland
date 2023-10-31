@@ -40,19 +40,9 @@ Before you begin, ensure you have met the following requirements:
 4. Run database migrations
 
         python manage.py migrate
-5. Create a superuser accont (for admin access)
+5. Create a superuser account (for admin access)
 
         python manage.py createsuperuser
 6. Start the development server:
 
         python manage.py runserver
-
-##  Usage
-
-1. Visit the application in your web browser
-2. Select the Source and target language
-3. Choose the content type (file) you want to translate
-4. Upload a file (word document)
-5. Select a translation pipeline
-6. Click the "Translate" button
-7. View the translated content or download the translated file
